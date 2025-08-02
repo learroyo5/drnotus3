@@ -1,4 +1,4 @@
-const NGROK_URL = "https://3370c3018102.ngrok-free.app";
+const BACKEND_URL = "https://volvo-visits-kerry-screensavers.trycloudflare.com";
 
 let mediaRecorder;
 let audioChunks = [];
@@ -158,7 +158,7 @@ uploadBtn.addEventListener("click", async () => {
   }, 1000);
 
   try {
-    const response = await fetch(`${NGROK_URL}/transcribe`, {
+    const response = await fetch(`${BACKEND_URL}/transcribe`, {
       method: "POST",
       body: formData
     });
