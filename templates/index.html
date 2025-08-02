@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOTUS - Asistente Clínico</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+  <style>
+    body {
+      font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1, h2, .title {
+      color: #58a6ff;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .section {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(20,20,20,0.4);
+      margin-bottom: 20px;
+      border: 1px solid #30363d;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .row > * {
+      flex: 1;
+    }
+    label, select, input[type="file"] {
+      display: block;
+      margin-bottom: 10px;
+      color: #c9d1d9;
+      font-weight: bold;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background: #0d1117;
+      color: #c9d1d9;
+      font-size: 1em;
+    }
+    button {
+      background: #238636;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover {
+      background: #2ea043;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    #loading {
+      display: none;
+      margin-top: 10px;
+      color: #58a6ff;
+      font-style: italic;
+    }
+    #errorMsg {
+      color: #ff7b72;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    #recordingIndicator {
+      margin-top: 10px;
+    }
+    #recordingIndicator > div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: bold;
+      color: #ff7b72;
+    }
+    #recordingTime {
+      color: #ff7b72;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    #processingTime {
+      color: #58a6ff;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    ul#listaArchivos {
+      background: #161b22;
+      border-radius: 8px;
+      padding: 10px;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+    }
+    ul#listaArchivos li {
+      margin-bottom: 8px;
+      border-bottom: 1px solid #30363d;
+      padding-bottom: 4px;
+    }
+    a {
+      color: #58a6ff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a:hover {
+      text-decoration: underline;
+      color: #79c0ff;
+    }
+    /* Íconos de colores para los botones */
+    .icon {
+      width: 18px;
+      height: 18px;
+      vertical-align: middle;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>NOTUS - Asistente de Registro Médico</h1>
+
+  <div id="errorMsg" style="display:none; color:#c0392b; font-weight:bold; margin-bottom:15px;"></div>
+
+  <div class="section">
+    <label for="template">Tipo de resumen:</label>
+    <select id="template" name="template">
+      <option value="SOAP">SOAP</option>
+      <option value="Registro clínico electrónico">Registro clínico electrónico</option>
+      <option value="Consulta psiquiátrica">Consulta psiquiátrica</option>
+      <option value="Consulta pediátrica">Consulta pediátrica</option>
+      <option value="Consulta ginecológica">Consulta ginecológica</option>
+      <option value="personalizado">Personalizado</option>
+    </select>
+
+    <div id="customPromptContainer" style="display:none; margin-top:10px;">
+      <label for="customPrompt" style="font-weight:bold;">Prompt de resumen:</label>
+      <textarea id="customPrompt" rows="3" style="width:100%; border: 2px solid #4a6db3; border-radius: 8px; padding: 8px; font-size: 1em;"></textarea>
+      <div style="font-size:0.95em; color:#666; margin-top:4px;">
+        Puedes editar el prompt base de la plantilla seleccionada o escribir uno completamente personalizado.
+      </div>
+    </div>
+
+    <div class="row" style="align-items: flex-end;">
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <div style="display: flex; gap: 18px;">
+          <button id="startBtn">
+            <svg class="icon" fill="#fff" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Iniciar Grabación
+          </button>
+          <button id="pauseBtn">
+            <svg class="icon" fill="#fff" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+            Pausar
+          </button>
+          <button id="stopBtn">
+            <svg class="icon" fill="#fff" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>
+            Detener
+          </button>
+        </div>
+        <button id="uploadBtn" style="margin-top:10px; width:100%;">
+          <svg class="icon" fill="#fff" viewBox="0 0 24 24">
+            <path d="M9.04 16.92l-.39 3.47c.56 0 .8-.24 1.09-.53l2.62-2.5 5.44 3.98c1 .55 1.72.26 1.98-.92l3.6-16.84c.33-1.54-.56-2.14-1.53-1.77L2.22 9.3c-1.5.6-1.48 1.46-.27 1.85l4.6 1.44 10.68-6.74c.5-.33.96-.15.58.21"/>
+          </svg>
+          Enviar a Transcripción
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 18px;">
+        <div>
+          <label for="audioFile">O carga un archivo de audio:</label>
+          <input type="file" id="audioFile" accept="audio/*">
+        </div>
+        <button id="resetBtn" style="margin-top:10px; width:100%;">
+          <svg class="icon" fill="#fff" viewBox="0 0 24 24">
+            <path d="M17.65 6.35A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.76-4.24l-2.79 2.79H22V2l-4.35 4.35z"/>
+          </svg>
+          Nueva Grabación
+        </button>
+      </div>
+    </div>
+
+    <label for="filename">Nombre para el resumen:</label>
+    <input type="text" id="filename" placeholder="Ej. Control_JuanPérez_27Mayo">
+    <div id="loading" style="display: none; margin-top: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px; font-style: italic; color: #4a6db3;">
+        <img src="/static/loading-pencil.gif" alt="Procesando..." width="32" height="32" />
+          Procesando... por favor espera.
+      </div>
+    </div>
+    <div id="recordingIndicator" style="display: none; margin-top: 10px;">
+      <div id="recordingIndicatorText" style="display: flex; align-items: center; gap: 8px; font-weight: bold; color: #c0392b;">
+        <div style="width: 12px; height: 12px; background-color: #c0392b; border-radius: 50%; animation: blink 1s infinite;"></div>
+        Grabando en curso...
+      </div>
+    </div>
+    <span id="recordingTime" style="color: red; font-weight: bold; margin-left:10px;">00:00</span>
+    <span id="processingTime" style="color: blue; font-weight: bold; margin-left:10px;">00:00</span>
+  </div>
+
+  <div class="section">
+    <div class="title">Transcripción</div>
+    <textarea id="transcription" readonly></textarea>
+    <div class="button-group">
+      <button id="copyTranscript">Copiar Transcripción</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="title">Resumen Clínico</div>
+    <textarea id="summary" readonly></textarea>
+    <div class="button-group">
+      <button id="copySummary">Copiar Resumen</button>
+      <button id="copyAll">Copiar Todo</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Archivos guardados</h2>
+    <ul id="listaArchivos"></ul>
+  </div>
+
+  <script>
+    function mostrarCargando(mostrar) {
+      document.getElementById("loading").style.display = mostrar ? "block" : "none";
+    }
+  </script>
+  <script src="/static/script.js"></script>
+  <script>
+  // Esto se debe colocar dentro del <head> o antes de tu script principal
+  const PROMPTS = {
+    "SOAP": "Actúa como médico. Resume en formato SOAP (Subjetivo, Objetivo, Evaluación, Plan) el siguiente texto de transcripción:",
+    "Registro clínico electrónico": "Actúa como médico. Resume el siguiente texto con los campos: Motivo de consulta, Síntomas, Exploración física, Diagnóstico, Indicaciones:",
+    "Consulta psiquiátrica": "Actúa como psiquiatra. Resume la entrevista en los campos: Antecedentes psiquiátricos previos, Examen mental,  Síntomas actuales, Diagnóstico presuntivo, Conducta a seguir:",
+    "Consulta pediátrica": "Actúa como pediatra. Resume el siguiente texto con los campos: Motivo de consulta, Antecedentes, Evaluación del desarrollo, Diagnóstico, Indicaciones:",
+    "Consulta ginecológica": "Actúa como ginecólogo. Resume el siguiente texto con los campos: Motivo de consulta, Ciclo menstrual, Síntomas, Examen físico, Diagnóstico, Tratamiento recomendado:"
+  };
+</script>
+</body>
+</html>
