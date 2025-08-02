@@ -1,3 +1,5 @@
+const NGROK_URL = "https://3370c3018102.ngrok-free.app";
+
 let mediaRecorder;
 let audioChunks = [];
 let currentStream;
@@ -139,18 +141,12 @@ uploadBtn.addEventListener("click", async () => {
   } else if (audioFile.files.length > 0) {
     fileToSend = audioFile.files[0];
   } else {
-    mostrarError("No hay audio para transcribir.");
+    mostrarError("Debes grabar o seleccionar un archivo de audio.");
     return;
   }
 
   const formData = new FormData();
   formData.append("audio", fileToSend);
-  formData.append("template", templateSelect.value);
-
-  if (templateSelect.value === "personalizado") {
-    const customPrompt = document.getElementById("customPrompt").value;
-    formData.append("customPrompt", customPrompt);
-  }
 
   mostrarCargando(true);
   processingSeconds = 0;
@@ -162,51 +158,22 @@ uploadBtn.addEventListener("click", async () => {
   }, 1000);
 
   try {
-    const response = await fetch("https://ffa6565d139a.ngrok-free.app/transcribe", {
+    const response = await fetch(`${NGROK_URL}/transcribe`, {
       method: "POST",
       body: formData
     });
-
-    const result = await response.json();
-    if (result.error) {
-      mostrarError(result.error);
-      transcriptionArea.value = "";
-      summaryArea.value = "";
-      mostrarCargando(false);
-      return;
-    }
-
-    // Aquí empieza el polling
-    const jobId = result.job_id;
-    if (!jobId) {
-      mostrarError("No se recibió el ID de trabajo.");
-      mostrarCargando(false);
-      return;
-    }
-
-    async function pollEstado() {
-      const estadoResp = await fetch(`/estado/${jobId}`);
-      const estado = await estadoResp.json();
-
-      if (estado.status === "completado") {
-        transcriptionArea.value = estado.transcription;
-        summaryArea.value = estado.summary;
-        mostrarCargando(false);
-        clearInterval(processingInterval);
-      } else if (estado.status === "error") {
-        mostrarError(estado.error || "Error en el procesamiento.");
-        mostrarCargando(false);
-        clearInterval(processingInterval);
-      } else {
-        setTimeout(pollEstado, 2000);
-      }
-    }
-    pollEstado();
-
-  } catch (error) {
-    mostrarError("Ocurrió un error durante la transcripción. Intenta nuevamente.");
+    const data = await response.json();
     mostrarCargando(false);
     clearInterval(processingInterval);
+    if (data.error) {
+      mostrarError(data.error);
+      return;
+    }
+    transcriptionArea.value = data.transcription;
+  } catch (error) {
+    mostrarCargando(false);
+    clearInterval(processingInterval);
+    mostrarError("Error al conectar con el backend.");
   }
 });
 
